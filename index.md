@@ -18,5 +18,5 @@ Here is the code combining the water and fish NEON data:
 #### Graphs
 Here are the graphs showing the data:
 
-![30 minute average Alaska](/img/alaska 30 min mean temp 21-23.png)
+![Alaska 30 min mean temp graph](/img/alaska 30 min mean temp 21-23.png)
 
