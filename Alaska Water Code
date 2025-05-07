@@ -1,0 +1,92 @@
+#install packages first (buy the book)
+install.packages("dplyr")
+install.packages("ggplot2")
+install.packages("tidyverse")
+install.packages("neonUtilities")
+install.packages("plotly")
+
+#run libraries (take the book off of the shelf)
+library(dplyr)
+library(tidyverse)
+library(neonUtilities)
+library(ggplot2)
+library(plotly)
+
+
+#pull data from NEON
+water<- loadByProduct( dpID = "DP1.20264.001", site=c("TOOK"), 
+                       startdate = "2021-06", enddate="2023-09", 
+                       token = Sys.getenv("NEON_TOKEN"),
+                       check.size = F) 
+#save the dataframes into the environment (TSD means temp surface depth)
+#TSD_1_min <- water$TSD_1_min
+TSD_30_min <- water$TSD_30_min
+
+
+#looking into the TDS 1 min data set
+##names(TSD_1_min)
+##nrow(TSD_1_min)
+##str(TSD_1_min)
+#and look at the date range
+##min(TSD_1_min$startDateTime)
+##max(TSD_1_min$endDateTime)
+
+#looking into the TDS 30 min data set
+names(TSD_30_min)
+nrow(TSD_30_min)
+str(TSD_30_min)
+#the date range should match here
+min(TSD_30_min$startDateTime)
+max(TSD_30_min$endDateTime)
+
+######the date ranges match, and the data sets line up
+
+
+#here is the same work for the 30 minute data set
+temp_30_min <- TSD_30_min %>%
+  filter(!is.na(tsdWaterTempMean))
+
+# Convert dates
+temp_30_min$startDateTime <- as.Date(temp_30_min$startDateTime)
+
+#now make the graph for the thirty minute water temp over the date range
+temp_30_min_dates <- ggplot(temp_30_min, aes(startDateTime, tsdWaterTempMean, color=verticalPosition)) +
+  geom_point() +
+  ggtitle("AK 30 Min Mean Water Temp") +
+  xlab("Date") + ylab("Temp (C)")+
+  ylim(0,30)+
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(color = "black"),
+    axis.text.y = element_text(color = "black"))
+theme_update(text = element_text(size = 15))
+temp_30_min_dates
+
+##this shows every position of the sensors for the mean temp of every thirty minutes
+
+
+#now create a plot for the vertical sensor positions separated against the mean temperature of each day
+##first, filter the data set into each of the sensor that I want
+temp_30_min_505 <- filter(temp_30_min,verticalPosition=="505")
+
+##next make a data frame with the average temperature for each day
+daily_data <- temp_30_min_505 %>%
+  mutate(date = as.Date(startDateTime))
+
+temp_avg_daily <- daily_data %>%
+  group_by(date) %>%
+  summarize(average_temp = mean(tsdWaterTempMean)) 
+
+#now make the graph with the average temperature on the y and the date on the x like before, but only at sensor 505
+temp_avg_dates <- ggplot(temp_avg_daily, aes(date, average_temp)) +
+  geom_point(color= "slateblue") +
+  ggtitle("Average Daily Water Temp") +
+  xlab("Date") + ylab("Temp (C)")+
+  ylim (0,27) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(color = "black"),
+    axis.text.y = element_text(color = "black"))
+theme_update(text = element_text(size = 15))
+temp_avg_dates
+ggplotly(temp_avg_dates)
